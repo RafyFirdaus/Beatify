@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/Beatify/static/css/main.ccc5478c.css",
-    "main.js": "/Beatify/static/js/main.d5426d0d.js",
-    "index.html": "/Beatify/index.html",
-    "main.ccc5478c.css.map": "/Beatify/static/css/main.ccc5478c.css.map",
-    "main.d5426d0d.js.map": "/Beatify/static/js/main.d5426d0d.js.map"
+    "main.css": "/library/static/css/main.ccc5478c.css",
+    "main.js": "/library/static/js/main.38f6476d.js",
+    "index.html": "/library/index.html",
+    "main.ccc5478c.css.map": "/library/static/css/main.ccc5478c.css.map",
+    "main.38f6476d.js.map": "/library/static/js/main.38f6476d.js.map"
   },
   "entrypoints": [
     "static/css/main.ccc5478c.css",
-    "static/js/main.d5426d0d.js"
+    "static/js/main.38f6476d.js"
   ]
 }
