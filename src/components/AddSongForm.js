@@ -1,13 +1,11 @@
 import { useState } from 'react';
 
 export default function AddSongForm({ addSong, onClose }) {
-  // State to manage form inputs
   const [url, setUrl] = useState('');
   const [songTitle, setSongTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [error, setError] = useState('');
 
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     

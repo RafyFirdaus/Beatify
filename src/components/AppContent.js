@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { loadSongs, addSongToStorage, deleteSongFromStorage } from '../utils/songStorage';
 import Layout from './Layout';
 import Library from '../pages/Library';
 import AddMusic from '../pages/AddMusic';
@@ -10,6 +11,12 @@ function AppContent() {
   const [currentSong, setCurrentSong] = useState(null);
   const navigate = useNavigate();
 
+  // Load songs when component mounts
+  useEffect(() => {
+    const savedSongs = loadSongs();
+    setSongs(savedSongs);
+  }, []);
+
   // Function to add a new song to the list
   const addSong = (url, title) => {
     const videoId = url.split('v=')[1];
@@ -18,12 +25,14 @@ function AppContent() {
       title: title,
       url: url
     };
-    setSongs([...songs, newSong]);
+    addSongToStorage(newSong);
+    setSongs(prevSongs => [...prevSongs, newSong]);
   };
 
   // Function to delete a song from the list
   const deleteSong = (id) => {
-    setSongs(songs.filter(song => song.id !== id));
+    deleteSongFromStorage(id);
+    setSongs(prevSongs => prevSongs.filter(song => song.id !== id));
     if (currentSong && currentSong.id === id) {
       setCurrentSong(null);
     }

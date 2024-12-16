@@ -5,9 +5,9 @@ export default function SongList({ songs, deleteSong, playSong }) {
       {songs.map((song) => (
         <div 
           key={song.id} 
-          className="mb-3 p-4 bg-spotify-dark hover:bg-opacity-80 rounded-lg transition-colors group"
+          className="mb-3 rounded-lg transition-colors group"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-4 bg-spotify-dark hover:bg-opacity-80 w-full rounded-lg">
             <div className="flex items-center flex-1 min-w-0">
               {/* Play button */}
               <button
@@ -19,7 +19,7 @@ export default function SongList({ songs, deleteSong, playSong }) {
               </button>
               
               {/* Song info */}
-              <div className="w-full">
+              <div className="flex-1">
                 <h3 className="text-white font-medium truncate">{song.title}</h3>
               </div>
             </div>
@@ -37,4 +37,4 @@ export default function SongList({ songs, deleteSong, playSong }) {
       ))}
     </div>
   );
-} 
+}
