@@ -19,11 +19,18 @@ function AppContent() {
 
   // Function to add a new song to the list
   const addSong = (url, title) => {
-    const videoId = url.split('v=')[1];
+    // Extract video ID from either youtube.com/watch?v= or youtu.be/ format
+    const videoId = url.includes('youtube.com/watch?v=') 
+      ? url.split('v=')[1].split('&')[0]  // Handle any additional parameters
+      : url.includes('youtu.be/') 
+        ? url.split('youtu.be/')[1].split('?')[0]  // Handle shortened URLs
+        : '';
+        
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     const newSong = {
       id: videoId,
       title: title,
-      url: url
+      url: embedUrl
     };
     addSongToStorage(newSong);
     setSongs(prevSongs => [...prevSongs, newSong]);

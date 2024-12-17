@@ -189,6 +189,11 @@ export default function Player({ song, onNext, onPrevious }) {
           width: '0',
           playerVars: {
             autoplay: 1,
+            controls: 1,
+            modestbranding: 1,
+            rel: 0,
+            showinfo: 0,
+            iv_load_policy: 3
           },
         }}
         ref={playerRef}
