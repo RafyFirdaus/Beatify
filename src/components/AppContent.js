@@ -18,19 +18,27 @@ function AppContent() {
   }, []);
 
   // Function to add a new song to the list
-  const addSong = (url, title) => {
-    // Extract video ID from either youtube.com/watch?v= or youtu.be/ format
-    const videoId = url.includes('youtube.com/watch?v=') 
-      ? url.split('v=')[1].split('&')[0]  // Handle any additional parameters
-      : url.includes('youtu.be/') 
-        ? url.split('youtu.be/')[1].split('?')[0]  // Handle shortened URLs
-        : '';
-        
-    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  const addSong = (url, title, isLocalFile = false) => {
+    let id, embedUrl;
+    
+    if (isLocalFile) {
+      id = `local_${Date.now()}`; // Generate unique ID for local files
+      embedUrl = url;
+    } else {
+      // Extract video ID from either youtube.com/watch?v= or youtu.be/ format
+      id = url.includes('youtube.com/watch?v=') 
+        ? url.split('v=')[1].split('&')[0]  // Handle any additional parameters
+        : url.includes('youtu.be/') 
+          ? url.split('youtu.be/')[1].split('?')[0]  // Handle shortened URLs
+          : '';
+      embedUrl = `https://www.youtube.com/embed/${id}?autoplay=1`;
+    }
+
     const newSong = {
-      id: videoId,
+      id: id,
       title: title,
-      url: embedUrl
+      url: embedUrl,
+      isLocal: isLocalFile
     };
     addSongToStorage(newSong);
     setSongs(prevSongs => [...prevSongs, newSong]);

@@ -3,24 +3,51 @@ import YouTube from 'react-youtube';
 
 export default function Player({ song, onNext, onPrevious }) {
   const playerRef = useRef(null);
+  const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(100);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
 
-  // Play the video when a new song is loaded
+  // Play the media when a new song is loaded
   useEffect(() => {
-    if (playerRef.current) {
-      playerRef.current.internalPlayer.playVideo();
-      setIsPlaying(true);
+    const audio = audioRef.current;
+    const initPlayer = async () => {
+      try {
+        if (song?.isLocal && audio) {
+          audio.volume = volume / 100;
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+          }
+        } else if (playerRef.current) {
+          await playerRef.current.internalPlayer.playVideo();
+        }
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("Error playing media:", error);
+      }
+    };
+
+    if (song) {
+      initPlayer();
     }
-  }, [song]);
+
+    return () => {
+      if (audio) {
+        audio.pause();
+      }
+    };
+  }, [song, volume]);
 
   // Update progress bar every second
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (playerRef.current && isPlaying) {
+      if (song?.isLocal && audioRef.current && isPlaying) {
+        setProgress(audioRef.current.currentTime);
+        setDuration(audioRef.current.duration);
+      } else if (playerRef.current && isPlaying) {
         const currentTime = await playerRef.current.internalPlayer.getCurrentTime();
         const videoDuration = await playerRef.current.internalPlayer.getDuration();
         setProgress(currentTime);
@@ -29,11 +56,25 @@ export default function Player({ song, onNext, onPrevious }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, song]);
 
   // Toggle play/pause state
   const togglePlayPause = async () => {
-    if (playerRef.current) {
+    if (song?.isLocal && audioRef.current) {
+      try {
+        if (isPlaying) {
+          audioRef.current.pause();
+        } else {
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+          }
+        }
+        setIsPlaying(!isPlaying);
+      } catch (error) {
+        console.error("Error toggling play/pause:", error);
+      }
+    } else if (playerRef.current) {
       if (isPlaying) {
         await playerRef.current.internalPlayer.pauseVideo();
       } else {
@@ -47,30 +88,43 @@ export default function Player({ song, onNext, onPrevious }) {
   const handleVolumeChange = async (e) => {
     const newVolume = Number(e.target.value);
     setVolume(newVolume);
-    if (playerRef.current) {
+    if (song?.isLocal && audioRef.current) {
+      audioRef.current.volume = newVolume / 100;
+    } else if (playerRef.current) {
       await playerRef.current.internalPlayer.setVolume(newVolume);
     }
+    if (newVolume === 0) {
+      setIsMuted(true);
+    } else if (isMuted) {
+      setIsMuted(false);
+    }
   };
 
-  // Toggle mute
+  // Handle seeking in the progress bar
+  const handleSeek = async (e) => {
+    const seekTime = Number(e.target.value);
+    if (song?.isLocal && audioRef.current) {
+      audioRef.current.currentTime = seekTime;
+      setProgress(seekTime);
+    } else if (playerRef.current) {
+      await playerRef.current.internalPlayer.seekTo(seekTime);
+      setProgress(seekTime);
+    }
+  };
+
+  // Toggle mute state
   const toggleMute = async () => {
-    if (playerRef.current) {
+    if (song?.isLocal && audioRef.current) {
+      audioRef.current.muted = !isMuted;
+    } else if (playerRef.current) {
       if (isMuted) {
-        await playerRef.current.internalPlayer.setVolume(volume); // Restore previous volume
+        await playerRef.current.internalPlayer.unMute();
+        await playerRef.current.internalPlayer.setVolume(volume);
       } else {
-        await playerRef.current.internalPlayer.setVolume(0); // Mute
+        await playerRef.current.internalPlayer.mute();
       }
-      setIsMuted(!isMuted);
     }
-  };
-
-  // Handle progress change
-  const handleProgressChange = async (e) => {
-    const newTime = Number(e.target.value);
-    setProgress(newTime);
-    if (playerRef.current) {
-      await playerRef.current.internalPlayer.seekTo(newTime);
-    }
+    setIsMuted(!isMuted);
   };
 
   // Format time in minutes and seconds
@@ -79,6 +133,8 @@ export default function Player({ song, onNext, onPrevious }) {
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  if (!song) return null;
 
   return (
     <div className="px-4 py-3 flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
@@ -143,7 +199,7 @@ export default function Player({ song, onNext, onPrevious }) {
                 min="0"
                 max={duration}
                 value={progress}
-                onChange={handleProgressChange}
+                onChange={handleSeek}
                 className="absolute top-0 w-full h-1 opacity-0 cursor-pointer"
               />
             </div>
@@ -181,26 +237,30 @@ export default function Player({ song, onNext, onPrevious }) {
         />
       </div>
 
-      {/* Hidden YouTube Player */}
-      <YouTube
-        videoId={song.id}
-        opts={{
-          height: '0',
-          width: '0',
-          playerVars: {
-            autoplay: 1,
-            controls: 1,
-            modestbranding: 1,
-            rel: 0,
-            showinfo: 0,
-            iv_load_policy: 3
-          },
-        }}
-        ref={playerRef}
-        onReady={(event) => {
-          event.target.setVolume(volume);
-        }}
-      />
+      {song.isLocal ? (
+        <audio
+          ref={audioRef}
+          src={song.url}
+          className="hidden"
+          onEnded={onNext}
+          onLoadedMetadata={(e) => setDuration(e.target.duration)}
+        />
+      ) : (
+        <YouTube
+          ref={playerRef}
+          videoId={song.id}
+          opts={{
+            height: '0',
+            width: '0',
+            playerVars: {
+              autoplay: 1,
+              controls: 0,
+            },
+          }}
+          onEnd={onNext}
+          className="hidden"
+        />
+      )}
     </div>
   );
 }
