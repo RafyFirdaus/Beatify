@@ -25,11 +25,10 @@ function AppContent() {
       id = `local_${Date.now()}`; // Generate unique ID for local files
       embedUrl = url;
     } else {
-      // Extract video ID from either youtube.com/watch?v= or youtu.be/ format
       id = url.includes('youtube.com/watch?v=') 
-        ? url.split('v=')[1].split('&')[0]  // Handle any additional parameters
+        ? url.split('v=')[1].split('&')[0]  
         : url.includes('youtu.be/') 
-          ? url.split('youtu.be/')[1].split('?')[0]  // Handle shortened URLs
+          ? url.split('youtu.be/')[1].split('?')[0]  
           : '';
       embedUrl = `https://www.youtube.com/embed/${id}?autoplay=1`;
     }
