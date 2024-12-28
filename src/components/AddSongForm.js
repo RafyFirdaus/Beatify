@@ -25,10 +25,10 @@ export default function AddSongForm({ addSong, onClose }) {
     const formattedTitle = `${artist.trim()} - ${songTitle.trim()}`;
     
     addSong(url, formattedTitle); // Add song to the list
-    resetForm(); // Reset form fields
+    resetForm(); 
   };
 
-  // Reset form fields
+  
   const resetForm = () => {
     setUrl('');
     setSongTitle('');

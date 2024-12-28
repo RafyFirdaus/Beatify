@@ -24,7 +24,8 @@ export default function AddLocalMusic({ addSong, onClose }) {
       const formattedTitle = `${artist.trim()} - ${title.trim()}`;
       const fileUrl = URL.createObjectURL(file);
       
-      addSong(fileUrl, formattedTitle, true);
+      await addSong(fileUrl, formattedTitle, true);
+      onClose();
       resetForm();
     } catch (error) {
       setError('Error uploading file. Please try again.');

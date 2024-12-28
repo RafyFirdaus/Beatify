@@ -13,16 +13,19 @@ function AppContent() {
 
   // Load songs when component mounts
   useEffect(() => {
-    const savedSongs = loadSongs();
-    setSongs(savedSongs);
+    const loadSavedSongs = async () => {
+      const savedSongs = await loadSongs();
+      setSongs(savedSongs);
+    };
+    loadSavedSongs();
   }, []);
 
   // Function to add a new song to the list
-  const addSong = (url, title, isLocalFile = false) => {
+  const addSong = async (url, title, isLocalFile = false) => {
     let id, embedUrl;
     
     if (isLocalFile) {
-      id = `local_${Date.now()}`; // Generate unique ID for local files
+      id = `local_${Date.now()}`; 
       embedUrl = url;
     } else {
       id = url.includes('youtube.com/watch?v=') 
@@ -39,13 +42,13 @@ function AppContent() {
       url: embedUrl,
       isLocal: isLocalFile
     };
-    addSongToStorage(newSong);
+    await addSongToStorage(newSong);
     setSongs(prevSongs => [...prevSongs, newSong]);
   };
 
   // Function to delete a song from the list
-  const deleteSong = (id) => {
-    deleteSongFromStorage(id);
+  const deleteSong = async (id) => {
+    await deleteSongFromStorage(id);
     setSongs(prevSongs => prevSongs.filter(song => song.id !== id));
     if (currentSong && currentSong.id === id) {
       setCurrentSong(null);
