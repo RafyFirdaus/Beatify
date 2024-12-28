@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import YouTube from 'react-youtube';
+import { base64toBlob } from '../utils/fileUtils';
 
 export default function Player({ song, onNext, onPrevious }) {
   const playerRef = useRef(null);
@@ -16,6 +17,12 @@ export default function Player({ song, onNext, onPrevious }) {
     const initPlayer = async () => {
       try {
         if (song?.isLocal && audio) {
+          // Convert base64 to blob URL if needed
+          if (song.url.startsWith('data:')) {
+            audio.src = base64toBlob(song.url);
+          } else {
+            audio.src = song.url;
+          }
           audio.volume = volume / 100;
           const playPromise = audio.play();
           if (playPromise !== undefined) {
@@ -37,6 +44,9 @@ export default function Player({ song, onNext, onPrevious }) {
     return () => {
       if (audio) {
         audio.pause();
+        if (audio.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audio.src);
+        }
       }
     };
   }, [song, volume]);
