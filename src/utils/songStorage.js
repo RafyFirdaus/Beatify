@@ -1,26 +1,24 @@
 // Constants
 const STORAGE_KEY = 'beetfySongs';
-const JSON_FILE_PATH = '/data/songs.json';
+const AUDIO_STORAGE_KEY = 'beetfyAudioData';
 
 // Function to load songs from localStorage
 const loadFromLocalStorage = () => {
     try {
         const songs = localStorage.getItem(STORAGE_KEY);
-        return songs ? JSON.parse(songs) : [];
+        const audioData = localStorage.getItem(AUDIO_STORAGE_KEY);
+        const parsedSongs = songs ? JSON.parse(songs) : [];
+        const parsedAudioData = audioData ? JSON.parse(audioData) : {};
+
+        // Merge audio data with songs
+        return parsedSongs.map(song => {
+            if (song.isLocal && parsedAudioData[song.id]) {
+                return { ...song, url: parsedAudioData[song.id] };
+            }
+            return song;
+        });
     } catch (error) {
         console.error('Error loading songs from localStorage:', error);
-        return [];
-    }
-};
-
-// Function to load songs from JSON file
-const loadFromJSON = async () => {
-    try {
-        const response = await fetch(JSON_FILE_PATH);
-        if (!response.ok) throw new Error('Failed to load JSON file');
-        return await response.json();
-    } catch (error) {
-        console.error('Error loading songs from JSON:', error);
         return [];
     }
 };
@@ -28,7 +26,18 @@ const loadFromJSON = async () => {
 // Function to save songs to localStorage
 const saveToLocalStorage = (songs) => {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(songs));
+        // Separate audio data from songs
+        const audioData = {};
+        const songsWithoutAudio = songs.map(song => {
+            if (song.isLocal) {
+                audioData[song.id] = song.url;
+                return { ...song, url: null };
+            }
+            return song;
+        });
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(songsWithoutAudio));
+        localStorage.setItem(AUDIO_STORAGE_KEY, JSON.stringify(audioData));
         return true;
     } catch (error) {
         console.error('Error saving songs to localStorage:', error);
@@ -36,32 +45,8 @@ const saveToLocalStorage = (songs) => {
     }
 };
 
-// Function to sync data between localStorage and JSON
-export const syncSongs = async () => {
-    try {
-        const localSongs = loadFromLocalStorage();
-        const jsonSongs = await loadFromJSON();
-        
-        // Merge songs from both sources (remove duplicates based on id)
-        const mergedSongs = [...localSongs];
-        jsonSongs.forEach(jsonSong => {
-            if (!mergedSongs.find(song => song.id === jsonSong.id)) {
-                mergedSongs.push(jsonSong);
-            }
-        });
-
-        // Update localStorage with merged data
-        saveToLocalStorage(mergedSongs);
-        return mergedSongs;
-    } catch (error) {
-        console.error('Error syncing songs:', error);
-        return loadFromLocalStorage(); // Fallback to localStorage if sync fails
-    }
-};
-
 // Function to load songs (with sync)
 export const loadSongs = async () => {
-    await syncSongs();
     return loadFromLocalStorage();
 };
 

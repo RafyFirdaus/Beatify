@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { fileToBase64 } from '../utils/fileUtils';
 
 export default function AddLocalMusic({ addSong, onClose }) {
   const [file, setFile] = useState(null);
@@ -23,14 +22,30 @@ export default function AddLocalMusic({ addSong, onClose }) {
 
     try {
       const formattedTitle = `${artist.trim()} - ${title.trim()}`;
-      const base64Data = await fileToBase64(file);
       
-      await addSong(base64Data, formattedTitle, true);
-      onClose();
-      resetForm();
+      // Convert file to base64 for storage
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onload = async () => {
+        try {
+          const base64Audio = reader.result;
+          await addSong(base64Audio, formattedTitle, true);
+          onClose();
+          resetForm();
+        } catch (error) {
+          console.error('Error saving song:', error);
+          setError('Error saving song. Please try again.');
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        setError('Error reading file. Please try again.');
+      };
     } catch (error) {
       console.error('Error processing file:', error);
-      setError('Error uploading file. Please try again.');
+      setError('Error processing file. Please try again.');
     }
   };
 

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import YouTube from 'react-youtube';
-import { base64toBlob } from '../utils/fileUtils';
 
 export default function Player({ song, onNext, onPrevious }) {
   const playerRef = useRef(null);
@@ -17,13 +16,14 @@ export default function Player({ song, onNext, onPrevious }) {
     const initPlayer = async () => {
       try {
         if (song?.isLocal && audio) {
-          // Convert base64 to blob URL if needed
-          if (song.url.startsWith('data:')) {
-            audio.src = base64toBlob(song.url);
-          } else {
-            audio.src = song.url;
-          }
+          audio.src = song.url;
           audio.volume = volume / 100;
+
+          // Add event listener for duration
+          audio.addEventListener('loadedmetadata', () => {
+            setDuration(audio.duration);
+          });
+
           const playPromise = audio.play();
           if (playPromise !== undefined) {
             await playPromise;
@@ -44,6 +44,7 @@ export default function Player({ song, onNext, onPrevious }) {
     return () => {
       if (audio) {
         audio.pause();
+        audio.removeEventListener('loadedmetadata', () => {});
         if (audio.src.startsWith('blob:')) {
           URL.revokeObjectURL(audio.src);
         }
@@ -56,12 +57,9 @@ export default function Player({ song, onNext, onPrevious }) {
     const interval = setInterval(async () => {
       if (song?.isLocal && audioRef.current && isPlaying) {
         setProgress(audioRef.current.currentTime);
-        setDuration(audioRef.current.duration);
       } else if (playerRef.current && isPlaying) {
         const currentTime = await playerRef.current.internalPlayer.getCurrentTime();
-        const videoDuration = await playerRef.current.internalPlayer.getDuration();
         setProgress(currentTime);
-        setDuration(videoDuration);
       }
     }, 1000);
 
@@ -139,6 +137,7 @@ export default function Player({ song, onNext, onPrevious }) {
 
   // Format time in minutes and seconds
   const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -253,7 +252,6 @@ export default function Player({ song, onNext, onPrevious }) {
           src={song.url}
           className="hidden"
           onEnded={onNext}
-          onLoadedMetadata={(e) => setDuration(e.target.duration)}
         />
       ) : (
         <YouTube
