@@ -74,3 +74,12 @@ export const getSongById = async (songId) => {
     const songs = await loadSongs();
     return songs.find(song => song.id === songId);
 };
+
+// Function to update a song
+export const updateSongInStorage = async (songId, updatedData) => {
+    const songs = await loadSongs();
+    const updatedSongs = songs.map(song => 
+        song.id === songId ? { ...song, ...updatedData } : song
+    );
+    return saveSongs(updatedSongs);
+};
