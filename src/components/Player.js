@@ -19,9 +19,12 @@ export default function Player({ song, onNext, onPrevious }) {
           audio.src = song.url;
           audio.volume = volume / 100;
 
-          // Add event listener for duration
+          
           audio.addEventListener('loadedmetadata', () => {
             setDuration(audio.duration);
+          });
+          audio.addEventListener('timeupdate', () => {
+            setProgress(audio.currentTime);
           });
 
           const playPromise = audio.play();
@@ -30,6 +33,8 @@ export default function Player({ song, onNext, onPrevious }) {
           }
         } else if (playerRef.current) {
           await playerRef.current.internalPlayer.playVideo();
+          const duration = await playerRef.current.internalPlayer.getDuration();
+          setDuration(duration);
         }
         setIsPlaying(true);
       } catch (error) {
@@ -45,6 +50,7 @@ export default function Player({ song, onNext, onPrevious }) {
       if (audio) {
         audio.pause();
         audio.removeEventListener('loadedmetadata', () => {});
+        audio.removeEventListener('timeupdate', () => {});
         if (audio.src.startsWith('blob:')) {
           URL.revokeObjectURL(audio.src);
         }
@@ -52,18 +58,27 @@ export default function Player({ song, onNext, onPrevious }) {
     };
   }, [song, volume]);
 
-  // Update progress bar every second
+  // Update progress bar for YouTube videos
   useEffect(() => {
-    const interval = setInterval(async () => {
-      if (song?.isLocal && audioRef.current && isPlaying) {
-        setProgress(audioRef.current.currentTime);
-      } else if (playerRef.current && isPlaying) {
+    let animationFrameId;
+    
+    const updateProgress = async () => {
+      if (!song?.isLocal && playerRef.current && isPlaying) {
         const currentTime = await playerRef.current.internalPlayer.getCurrentTime();
         setProgress(currentTime);
+        animationFrameId = requestAnimationFrame(updateProgress);
       }
-    }, 1000);
+    };
 
-    return () => clearInterval(interval);
+    if (!song?.isLocal && isPlaying) {
+      updateProgress();
+    }
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, [isPlaying, song]);
 
   // Toggle play/pause state
@@ -198,7 +213,7 @@ export default function Player({ song, onNext, onPrevious }) {
               <div className="w-full h-1 bg-gray-800 rounded-lg">
                 <div 
                   className="absolute h-full bg-gradient-to-r from-spotify-green via-green-400 to-green-300 rounded-lg"
-                  style={{ width: `${(progress / duration) * 100}%` }}
+                  style={{ width: `${duration > 0 ? (progress / duration) * 100 : 0}%` }}
                 >
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg group-hover:scale-125 transition-transform" />
                 </div>
